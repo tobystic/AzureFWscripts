@@ -1,0 +1,66 @@
+basic connection steps
+
+login to Az
+>>Connect-AzAccount
+
+Get subscriptions
+>>Get-AzSubscription
+
+Select the desired subscription.
+>>$subscriptionId = "00000000-0000-0000-0000-000000000000" # GUID of your Azure subscription
+Get-AzSubscription -Subscriptionid $subscriptionId | Select-AzSubscription
+
+
+Create resource group
+>>$resGroupName = "apim-appGw-RG" # resource group name
+$location = "West US"           # Azure region
+New-AzResourceGroup -Name $resGroupName -Location $location
+
+
+Get IPs protected by DDOS protection standard
+>>Get-AllDdosProtectedIPs
+
+cd to your preferred subscription
+>>PS Azure:\> cd MySubscriptionName
+PS Azure:\MySubscriptionName>
+
+link to access to Azure drive
+https://docs.microsoft.com/en-us/azure/cloud-shell/quickstart-powershell
+
+
+Access Azure drive in Clouddrive
+>>
+cd $HOME\clouddrive
+# Create a new file in clouddrive directory
+New-Item helloworld.ps1
+# Open the new file for editing
+code .\helloworld.ps1
+# Add the content, such as 'Hello World!'
+.\helloworld.ps1
+Hello World!
+
+https://docs.microsoft.com/en-us/azure/cloud-shell/quickstart-powershell
+
+ 
+ 
+ sample visualization KQL  queries
+ AzureDiagnostics
+| where ResourceType == "APPLICATIONGATEWAYS" and ("{WAF:lable}" == "All" or Resource in ({WAF}))
+| where Message contains "SQL Injection" 
+| summarize count() by hostname_s, Message
+| order by count_ desc 
+
+AzureDiagnostics
+| where ResourceType == "APPLICATIONGATEWAYS" and ("{WAF:lable}" == "All" or Resource in ({WAF}))
+| where Message contains "SQL Injection" 
+| summarize RowCount = count() by hostname_s, Message, ResourceGroup
+| order by RowCount desc
+
+AzureDiagnostics
+| where ResourceType == "APPLICATIONGATEWAYS" and ("{WAF:lable}" == "All" or Resource in ({WAF}))
+| where OperationName == "ApplicationGatewayFirewall"
+| where Message contains "attack"
+| extend Role =  extract("ApplicationGateway([a-zA-Z_a-zA-Z_0-9]*)",1,instanceId_s) 
+| summarize Amount = count() by Message, bin(TimeGenerated, 1h), hostName = hostname_s, ResourceId, Category, Role, ResourceGroup
+| project Amount, Message, TimeGenerated, hostName, ResourceId, Category, Role, ResourceGroup
+| order by Amount desc
