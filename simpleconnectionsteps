@@ -12,6 +12,7 @@ Get-AzSubscription -Subscriptionid $subscriptionId | Select-AzSubscription
 
 
 Create resource group
+===================
 >>$resGroupName = "apim-appGw-RG" # resource group name
 $location = "West US"           # Azure region
 New-AzResourceGroup -Name $resGroupName -Location $location
@@ -29,6 +30,7 @@ https://docs.microsoft.com/en-us/azure/cloud-shell/quickstart-powershell
 
 
 Access Azure drive in Clouddrive
+=======================================
 >>
 cd $HOME\clouddrive
 # Create a new file in clouddrive directory
@@ -41,9 +43,22 @@ Hello World!
 
 https://docs.microsoft.com/en-us/azure/cloud-shell/quickstart-powershell
 
+
+Allocate and deallocate Azure firewall
+==================================================
+$azfw = Get-AzFirewall -Name "FW Name" -ResourceGroupName "RG Name"
+$azfw.Deallocate()
+Set-AzFirewall -AzureFirewall $azfw
+
+deallocate
+------------
+$azfw = Get-AzFirewall -Name redmndseattle -ResourceGroupName TobiSEA2
+$azfw.Deallocate()
+Set-AzFirewall -AzureFirewall $azfw
  
  
  sample visualization KQL  queries
+ ==========================================
  AzureDiagnostics
 | where ResourceType == "APPLICATIONGATEWAYS" and ("{WAF:lable}" == "All" or Resource in ({WAF}))
 | where Message contains "SQL Injection" 
