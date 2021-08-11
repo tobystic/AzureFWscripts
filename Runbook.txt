@@ -1,14 +1,13 @@
 <#
 
-**************************************************************************************************************************************************
- This Azure Automation runbook script automates Azure Firewall backups. It takes snapshots at different time schedule of both infrasture settings 
- and the firewall policy configuration (DNAT, Applcation and Network rules) and saves it to a Blob storage container. 
- It also deletes old backups from blob storage after a specifed retention date.
- *************************************************************************************************************************************************
+****************************************************************************************************************************
+This Azure Automation runbook automates Azure Firewall backups. It takes snap shots at different instances or schedule and 
+saves it to a Blob storage container. It also deletes old backups from blob storage.
+ ***************************************************************************************************************************
 
 .DESCRIPTION
 	You should use this Runbook if you want to manage Azure Firewall backups in Blob storage or just want to export the current configuration. It
-  works as a powershell runbook.
+    works as a power runbook. 
 	
 #>
 
@@ -68,18 +67,27 @@ function Create-newContainer([string]$blobContainerName, $storageContext) {
 }
 
 function Export-To-Storageaccount([string]$resourceGroupName, [string]$AzureFirewallName, [string]$storageKey, [string]$blobContainerName,$storageContext) {
-	Write-Verbose "Starting Azure Firewall current configuration export in json" -Verbose
+	Write-Verbose "Starting Azure Firewall current configuration export in json..." -Verbose
+    try
+    {
+        $BackupFilename = $AzureFirewallName + (Get-Date).ToString("yyyyMMddHHmm") + ".json"
+        $BackupFilePath = ($env:TEMP + "\" + $BackupFilename)
+        $AzureFirewallId = (Get-AzFirewall -Name $AzureFirewallName -ResourceGroupName $resourceGroupName).id
+        $FirewallPolicyID = (Get-AzFirewallPolicy -Name $AzureFirewallPolicy -ResourceGroupName $resourceGroupName).id
+        Export-AzResourceGroup -ResourceGroupName $resourceGroupName -SkipAllParameterization -Resource @($AzureFirewallId, $FirewallPolicyID) -Path $BackupFilePath
+	#Export value and store with name created
+        Write-Output "Submitting request to dump Azure Firewall configuration"
+        $blobname = $BackupFilename
+        $output = Set-AzureStorageBlobContent -File $BackupFilePath -Blob $blobname -Container $blobContainerName -Context $storageContext -Force -ErrorAction stop
+
+
+    }
+	#send out message if backup fails
+    catch {
+		   $ErrorMessage = "BackUp not created. Please check the input values."
+           throw $ErrorMessage
+        }
     
-    $BackupFilename = $AzureFirewallName + (Get-Date).ToString("yyyyMMddHHmm") + ".json"
-    $BackupFilePath = ($env:TEMP + "\" + $BackupFilename)
-    $AzureFirewallId = (Get-AzFirewall -Name $AzureFirewallName -ResourceGroupName $resourceGroupName).id
-    $FirewallPolicyID = (Get-AzFirewallPolicy -Name $AzureFirewallPolicy -ResourceGroupName $resourceGroupName).id
-    Export-AzResourceGroup -ResourceGroupName $resourceGroupName -SkipAllParameterization -Resource @($AzureFirewallId, $FirewallPolicyID) -Path $BackupFilePath
-
-    Write-Output "Submitting request to dump Azure Firewall configuration"
-    $blobname = $BackupFilename
-    $output = Set-AzureStorageBlobContent -File $BackupFilePath -Blob $blobname -Container $blobContainerName -Context $storageContext -Force -ErrorAction SilentlyContinue
-
 }
 
 function Remove-Older-Backups([int]$retentionDays, [string]$blobContainerName, $storageContext) {
@@ -92,10 +100,11 @@ function Remove-Older-Backups([int]$retentionDays, [string]$blobContainerName, $
 	}
 }
 
-Write-Verbose "Starting database backup" -Verbose
+Write-Verbose "Starting database backup..." -Verbose
 
 $StorageContext = New-AzureStorageContext -StorageAccountName $storageAccountName -StorageAccountKey $storageKey
 
+#login to zure
 Login
 Import-Module Az.Network
 Import-Module Az.Resources
