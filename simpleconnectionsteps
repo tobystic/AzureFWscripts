@@ -1,4 +1,4 @@
-basic connection steps
+#### Allocate and Deallocate Azure Firewall. Same settings 
 
 login to Az
 >>Connect-AzAccount
