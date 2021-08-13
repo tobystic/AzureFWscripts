@@ -52,9 +52,29 @@ Set-AzFirewall -AzureFirewall $azfw
 
 deallocate
 ------------
-$azfw = Get-AzFirewall -Name redmndseattle -ResourceGroupName TobiSEA2
+$azfw = Get-AzFirewall -Name redmndseattle -ResourceGroupName $rgname
 $azfw.Deallocate()
 Set-AzFirewall -AzureFirewall $azfw
+
+
+Reallocate in Forced tunnellig mode
+=========================================
+Stop/Start Firewall in Forced Tunnel Mode requires these additional steps. Can you add a separate topic just for this? 
+
+Deallocate:
+$azfw = Get-AzureRmFirewall -Name "ContosoProdDFirewall” -ResourceGroupName "AZFWProdRG"
+$azfw.Deallocate()
+Set-AzureRmFirewall -AzureFirewall $azfw
+
+
+Allocate:
+$vnet= Get-AzureRmVirtualNetwork -ResourceGroupName "YairAZFWProdRG" -Name "YairAZFWProdVNET"
+$pip= Get-AzureRmPublicIpAddress -Name "azfwpublicip" -ResourceGroupName "YairAZFWProdRG"
+$mgmtPip2 = Get-AzPublicIpAddress -ResourceGroupName "YairAZFWProdRG" -Name "mgmtpip"
+$azfw.Allocate($vnet, $pip, $mgmtPip2)
+$azfw | Set-AzFirewall
+
+
  
  
  sample visualization KQL  queries
