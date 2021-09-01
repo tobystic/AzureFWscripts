@@ -77,11 +77,13 @@ function Export-To-Storageaccount([string]$resourceGroupName, [string]$AzureFire
     {
         $BackupFilename = $AzureFirewallName + (Get-Date).ToString("yyyyMMddHHmm") + ".json"
         $BackupFilePath = ($env:TEMP + "\" + $BackupFilename)
-        $url = https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$ResourceGroupName/providers/Microsoft.Network/azureFirewalls/$AzureFirewallName?api-version=2021-02-01
+	    $url = https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$ResourceGroupName/providers/Microsoft.Network/azureFirewalls/$AzureFirewallName?api-version=2021-02-01
         Invoke-RestMethod -Uri $url -Method Get;
-        //$AzureFirewallId = (Get-AzFirewall -Name $AzureFirewallName -ResourceGroupName $resourceGroupName).id
-        //$FirewallPolicyID = (Get-AzFirewallPolicy -Name $AzureFirewallPolicy -ResourceGroupName $resourceGroupName).id
-        Export-AzResourceGroup -ResourceGroupName $resourceGroupName -SkipAllParameterization -Resource @($AzureFirewallId, $FirewallPolicyID) -Path $BackupFilePath
+
+        #$AzureFirewallId = (Get-AzFirewall -Name $AzureFirewallName -ResourceGroupName $resourceGroupName).id
+        #$FirewallPolicyID = (Get-AzFirewallPolicy -Name $AzureFirewallPolicy -ResourceGroupName $resourceGroupName).id
+        Export-AzResourceGroup -ResourceGroupName $resourceGroupName -SkipAllParameterization $url -Path $BackupFilePath
+
 	#Export value and store with name created
         Write-Output "Submitting request to dump Azure Firewall configuration"
         $blobname = $BackupFilename
@@ -97,15 +99,6 @@ function Export-To-Storageaccount([string]$resourceGroupName, [string]$AzureFire
     
 }
 
-function Remove-Older-Backups([int]$retentionDays, [string]$blobContainerName, $storageContext) {
-	Write-Output "Removing backups older than '$retentionDays' days from blob: '$blobContainerName'"
-	$isOldDate = [DateTime]::UtcNow.AddDays(-$retentionDays)
-	$blobs = Get-AzureStorageBlob -Container $blobContainerName -Context $storageContext
-	foreach ($blob in ($blobs | Where-Object { $_.LastModified.UtcDateTime -lt $isOldDate -and $_.BlobType -eq "BlockBlob" })) {
-		Write-Verbose ("Removing blob: " + $blob.Name) -Verbose
-		Remove-AzureStorageBlob -Blob $blob.Name -Container $blobContainerName -Context $storageContext
-	}
-}
 
 Write-Verbose "Starting database backup..." -Verbose
 
